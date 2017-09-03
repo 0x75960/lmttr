@@ -53,15 +53,14 @@ func NewPeriodLimitter(concurrency uint, span time.Duration) (p PeriodLimitter, 
 
 		for range ticker.C {
 
-			for {
-
+			for i := 0; i < len(s); i++ {
 				select {
 				case <-s:
-					// take value while it possible
+					// take value
 				default:
 					break
 				}
-
+				<-time.After(3 * time.Millisecond)
 			}
 
 		}

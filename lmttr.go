@@ -19,7 +19,7 @@ func NewLimitter(concurrency uint) (lmttr Limitter, err error) {
 	}, nil
 }
 
-// Start a process
+// Start of a process
 func (l *Limitter) Start() {
 	l.semaphore <- true
 	l.wait.Add(1)
@@ -27,11 +27,11 @@ func (l *Limitter) Start() {
 
 // End of a process
 func (l *Limitter) End() {
-	<-l.semaphore
 	l.wait.Done()
+	<-l.semaphore
 }
 
-// Wait all processes
+// Wait to finish all of processes started
 func (l *Limitter) Wait() {
 	l.wait.Wait()
 }

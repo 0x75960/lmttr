@@ -89,3 +89,65 @@ func (pl *PeriodLimitter) End() {
 func (pl *PeriodLimitter) Wait() {
 	pl.wait.Wait()
 }
+
+// MaxLimitter
+// be careful to deadlock
+type MaxLimitter struct {
+	semaphore chan bool
+	wait      sync.WaitGroup
+	max       uint
+}
+
+// NewMaxLimitter limit proc to max
+func NewMaxLimitter(max uint) (ml MaxLimitter, err error) {
+	return MaxLimitter{
+		semaphore: make(chan bool, max),
+		wait:      sync.WaitGroup{},
+		max:       max,
+	}, nil
+}
+
+// Start of a process
+func (ml *MaxLimitter) Start() {
+	ml.semaphore <- true
+	ml.wait.Add(1)
+}
+
+// End of a process
+func (ml *MaxLimitter) End() {
+	ml.wait.Done()
+}
+
+// Flush limit once
+func (ml *MaxLimitter) Flush() {
+	for i := 0; i < len(ml.semaphore); i++ {
+		select {
+		case <-ml.semaphore:
+		default:
+			return
+		}
+		<-time.After(3 * time.Millisecond)
+	}
+}
+
+// Mitigate limit once
+func (ml *MaxLimitter) Mitigate(n int) {
+	for i := 0; i < n; i++ {
+		select {
+		case <-ml.semaphore:
+		default:
+			return
+		}
+		<-time.After(3 * time.Millisecond)
+	}
+}
+
+// IsMax check reaches to max
+func (ml *MaxLimitter) IsMax() bool {
+	return ml.max == uint(len(ml.semaphore))
+}
+
+// Wait to finish all of processes started
+func (ml *MaxLimitter) Wait() {
+	ml.wait.Wait()
+}
